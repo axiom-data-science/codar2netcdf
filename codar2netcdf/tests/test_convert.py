@@ -15,6 +15,7 @@ class TestConvertTotals(unittest.TestCase):
 
     def setUp(self):
         self.resource = os.path.join(os.path.dirname(__file__), 'resources', 'totals.txt')
+        self.empty = os.path.join(os.path.dirname(__file__), 'resources', 'empty.txt')
         self.grid_path = os.path.join(os.path.dirname(__file__), 'resources', 'totals.grid')
         self.output_path = os.path.join(os.path.dirname(__file__), 'resources', 'totals.nc')
 
@@ -25,6 +26,11 @@ class TestConvertTotals(unittest.TestCase):
         assert w.origin_x == Decimal('-83.0045167')
         assert w.origin_y == Decimal('26.8332500')
         assert w.grid_spacing == 10000
+
+    def test_import_empty(self):
+        w = CodarAsciiTotals(self.empty)
+        assert w.is_valid() is False
+        assert w.data.empty
 
     def test_export_netcdf(self):
         w = CodarAsciiTotals(self.resource)

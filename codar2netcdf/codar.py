@@ -45,8 +45,13 @@ class CodarAsciiTotals(object):
                     self.units = [ x.strip().replace('(', '').replace(')', '') for x in line.split('  ')[1:] if x ]
                     break
 
-        self.origin_time = parse('{} {}'.format(timestamp, timezone))
-        self.data = pd.read_csv(ascii_file, comment='%', sep=' ', header=None, names=self.headers, na_values=['999.000'], skipinitialspace=True)
+        try:
+            self.origin_time = parse('{} {}'.format(timestamp, timezone))
+            self.data = pd.read_csv(ascii_file, comment='%', sep=' ', header=None, names=self.headers, na_values=['999.000'], skipinitialspace=True)
+        except BaseException:
+            logger.error("Could not parse ASCII Totals file")
+            self.origin_time = None
+            self.data = pd.DataFrame()
 
     def is_valid(self):
         return not self.data.empty
