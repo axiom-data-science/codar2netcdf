@@ -6,11 +6,7 @@ of the combined radial data) into CF NetCDF files.
 ## Installation
 
 ```
-# pip
-$ pip install codar2netcdf
-
-# conda
-$ conda install -c ioos codar2netcdf
+$ conda install -c axiom-data-science codar2netcdf
 ```
 
 ## Usage

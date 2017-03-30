@@ -1,15 +1,17 @@
 language: python
+
 python:
   - "2.7"
   - "3.4"
   - "3.5"
+
 sudo: false
 
-before_install:
+install:
   # Install miniconda
   # -----------------
   - export CONDA_BASE=http://repo.continuum.io/miniconda/Miniconda
-  - wget ${CONDA_BASE}3-3.7.0-Linux-x86_64.sh -O miniconda.sh;
+  - wget ${CONDA_BASE}3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
 
@@ -19,14 +21,37 @@ before_install:
   - conda config --set show_channel_urls True
   - conda config --add create_default_packages pip
   - conda update --quiet conda
+
+  # Add 3rd party channels
+  # ------------------------------------
+  - conda config --add channels conda-forge
+  - conda config --add channels axiom-data-science
+
+  # Create our environment
+  # ------------------------------------
   - ENV_NAME='test-environment'
   - conda create --quiet -n $ENV_NAME python=$TRAVIS_PYTHON_VERSION
   - source activate $ENV_NAME
 
-install:
-  # Customise the testing environment
-  # ---------------------------------
-  - conda install --channel ioos --file requirements.txt
+  # Install testing requirements
+  # ------------------------------------
+  - conda install --file requirements.txt
   - conda list --export
 
-script: py.test -rxs -s -v
+script:
+  - py.test -s -rxs -v
+  - conda install -n root conda-build anaconda-client
+  - conda build conda-recipe --python $TRAVIS_PYTHON_VERSION
+  - conda install codar2netcdf --use-local
+
+after_success:
+  - if [ "$TRAVIS_PULL_REQUEST" == "false" ] && [ "$TRAVIS_TAG" != "" ]; then
+    anaconda -t $ANACONDA_TOKEN upload --force -u axiom-data-science $HOME/miniconda/**/codar2netcdf-*.tar.bz2;
+    fi
+
+deploy:
+  provider: releases
+  api_key:
+    secure: XwmLjZWeU5aH8AnVGMEAKECB4YG1o134RieVfCpqITUHv0vFVxYyTvUPXg3gBXorHodgnx/DAYW+RyPC0kp6CiQxM4zo3FykSkEEiUq38l5TlyAmjcPVoyMGtR4cI8nC8b3nxNsmrltcJ8go88wW+2963de9FtyuCH6WXxboqZQNVt2r8b0o+y6Dy95TxSoYXFkRpa5nasHYyCe1bjwDyhTgAA4vRBkTojp/vdCMr8cvZUS7h/sCuK+RuwfoOUKWvHfXWQVSIULKQME53nmzGKaZtMjP8O9DP1TWnM77BMaTrPWxlFtvtxHNVLHI4bvR9EepXFVG7yInfEOk/t4PGFeevYXYla6jfxnN4ATom4nhopLBsMZC9E1vtvBDVQySu0bBHilVdXU2r2DQ9NKhWGS11rUcN+1pfe1cQSFcY+TFof5xXXvigv4EI993ww+FkXXxhciXk23wD2ynVbGP15jgbC2gg1fxH5c2wImr4+QdjzWUJv2iv6c82TkYxwkln7h0MhzUBKVwPZV+SZhEEy2NFLgccNz/fsVGD62FUL+7hPLpI6Mv+ZpT9Xgo0jwnVNpocFbe+rgc7PlEGmG9lyap02ODRSmEzOkgRKFGaGbj5qaJhWd0pYG+qGub+7RzjHCEOQ1f5AEMMygUA1vSJi8efixe27oVDg0ft+8YPzw=
+  on:
+    tags: true
